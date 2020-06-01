@@ -1,3 +1,3 @@
-java -Xmx64g -cp target/WikipediaEntities-0.0.1-SNAPSHOT.jar com.github.kno10.wikipediaentities.ParseWikipedia
-java -Xmx64g -cp target/WikipediaEntities-0.0.1-SNAPSHOT.jar com.github.kno10.wikipediaentities.LoadWikiData
-java -Xmx64g -cp target/WikipediaEntities-0.0.1-SNAPSHOT.jar com.github.kno10.wikipediaentities.AnalyzeLinks
+java -DentityExpansionLimit=2147480000 -DtotalEntitySizeLimit=2147480000 -Djdk.xml.totalEntitySizeLimit=2147480000 -Xmx64g -cp target/WikipediaEntities-0.0.1-SNAPSHOT.jar com.github.kno10.wikipediaentities.ParseWikipedia
+java -DentityExpansionLimit=2147480000 -DtotalEntitySizeLimit=2147480000 -Djdk.xml.totalEntitySizeLimit=2147480000 -Xmx64g -cp target/WikipediaEntities-0.0.1-SNAPSHOT.jar com.github.kno10.wikipediaentities.LoadWikiData
+java -DentityExpansionLimit=2147480000 -DtotalEntitySizeLimit=2147480000 -Djdk.xml.totalEntitySizeLimit=2147480000 -Xmx64g -cp target/WikipediaEntities-0.0.1-SNAPSHOT.jar com.github.kno10.wikipediaentities.AnalyzeLinks
