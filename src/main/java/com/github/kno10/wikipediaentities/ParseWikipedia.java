@@ -90,7 +90,8 @@ public class ParseWikipedia {
     @Override
     public void run() {
       final XMLInputFactory factory = XMLInputFactory.newInstance();
-      try (InputStream fin2 = Util.openInput(fname)) {
+      try (InputStream fin2 =
+                   fname.contains("multistream") ? Util.openMultiStreamBZip2(fname) : Util.openInput(fname)) {
         XMLEventReader eventReader = factory.createXMLEventReader(fin2, "UTF-8");
 
         while(eventReader.hasNext()) {

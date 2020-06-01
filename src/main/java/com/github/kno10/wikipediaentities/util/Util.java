@@ -134,6 +134,11 @@ public class Util {
     }
   }
 
+  public static InputStream openMultiStreamBZip2(String fname) throws IOException{
+      InputStream fin = new FileInputStream(fname);
+      return new MultiStreamBZip2InputStream(fin);
+  }
+
   /**
    * Normalize a Wikipedia link.
    *
