@@ -189,7 +189,13 @@ public class AnalyzeLinks {
       assert (targ != null);
       String next = datamap.get(key);
       if(next != null) {
+        seen.clear();
+        seen.add(key);
         do {
+          if (!seen.add(targ)) {
+              System.err.format("Redirect cycle detected involving %s > %s > %s\n", key, targ, next);
+              break;
+          }
           if(datamap.put(targ, next) == null) {
             // System.err.format("Warning: WikiData references a redirect: %s >
             // %s > %s\n", next, key, targ);
