@@ -6,12 +6,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.file.FileSystems;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
@@ -35,9 +34,10 @@ import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 
-import javax.swing.plaf.synth.SynthTextAreaUI;
 
 public class AnalyzeLinks {
+    private static Set<String> TARGET_BLACKLIST = new HashSet<>(
+            Arrays.asList("Q2035701:Race and ethnicity in the United States Census"));
     private static final int MINIMUM_MENTIONS = 20;
 
     /** Collect unique strings. */
@@ -240,6 +240,7 @@ public class AnalyzeLinks {
 
     private class WorkerThread extends Thread {
         Object2IntOpenHashMap<String> counters = new Object2IntOpenHashMap<>();
+        Object2IntOpenHashMap<String> formCounters = new Object2IntOpenHashMap<>();
 
         StringBuilder buf = new StringBuilder();
 
@@ -280,6 +281,7 @@ public class AnalyzeLinks {
             for(String t : cand.query.split(" "))
                 pq.add(new Term(LuceneWikipediaIndexer.LUCENE_FIELD_TEXT, t));
             counters.clear();
+            formCounters.clear();
             // Careful: max count must be less than 64k, because we use short counts!
             TopDocs res = searcher.search(pq.build(), 0xFFFF);
             ScoreDoc[] docs = res.scoreDocs;
@@ -287,9 +289,9 @@ public class AnalyzeLinks {
                 cand.query = null; // Flag as dead.
                 return; // Too rare.
             }
-            int minsupp = Math.max(200, docs.length / 5);
+            int minsupp = Math.max(200, docs.length / 10);
             int weight = 0;
-            boolean exact = false;
+            boolean exactLink = false;
             for(int i = 0; i < docs.length; ++i) {
                 Document d = searcher.doc(docs[i].doc);
                 String[] lis = d.get(LuceneWikipediaIndexer.LUCENE_FIELD_LINKS).split("\t");
@@ -306,14 +308,18 @@ public class AnalyzeLinks {
                 boolean curExact = false;
                 for(int j = 0; j < lis.length; j += 2) {
                     final String targ = datamap.get(lis[j]);
+                    if (TARGET_BLACKLIST.contains(targ) && !targ.toLowerCase().contains(cand.query)) {
+                        continue;
+                    }
                     if(targ != null) {
                         if(dups.add(targ)) {
                             counters.addTo(targ, 1);
                             used = true;
                         }
                         if(j + 1 < lis.length && lis[j + 1].equalsIgnoreCase(cand.query) && dupsExact.add(targ)) {
+                            formCounters.addTo(lis[j + 1], 1);
+                            exactLink = true;
                             curExact = true;
-                            exact = true;
                             counters.addTo(targ, EXACT);
                         }
                     }
@@ -328,6 +334,8 @@ public class AnalyzeLinks {
             if(counters.size() > 0) {
                 buf.setLength(0); // clear
                 buf.append(cand.query);
+                String forms = CounterSet.descending(formCounters).stream().map(x->x.getKey()).collect(Collectors.joining("|"));
+                buf.append('\t').append(forms);
                 buf.append('\t').append(res.totalHits);
                 buf.append('\t').append(weight);
                 List<Entry<String>> sorted = CounterSet.descending(counters);
@@ -335,10 +343,17 @@ public class AnalyzeLinks {
                 // int max = Math.max(docs.length, sorted.get(0).getCombinedCount());
                 final double norm = Math.log1p(.1 * max);
                 for(CounterSet.Entry<String> c : sorted) {
+                    final int score = c.getSearchCount() + 16 * c.getExactCount();
+//                    System.out.println("num docs: " + res.totalHits);
+//                    System.out.println("weight: " + weight);
+//                    System.out.println("search count: " + c.getSearchCount());
+//                    System.out.println("exact count: " + c.getExactCount());
+//                    System.out.println("score: " + score);
+//                    System.out.println("minsupp: " + minsupp);
+//                    System.out.println("targ: " + c.getKey());
                     if (c.getExactCount() == 0) {
                         break;
                     }
-                    final int score = c.getSearchCount() + 16 * c.getExactCount();
                     if(score < minsupp)
                         break;
                     if(score >> 1 > minsupp) // Increase cutoff
@@ -354,7 +369,7 @@ public class AnalyzeLinks {
                     output = true;
                 }
             }
-            if(output && exact) {
+            if(output && exactLink) {
                 // System.err.println(buf.toString());
                 cand.matches = buf.toString(); // Flag as good.
             }
