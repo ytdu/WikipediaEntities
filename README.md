@@ -33,6 +33,13 @@ article also includes links to other articles (e.g. the republican party);
 but hopefully there will be much less agreement on them.
 
 
+How to Run
+----------
+* Edit the config located at `src/main/resources/com/github/kno10/wikipediaentities/wikipediaentities.properties`
+* Make a package by `mvn package -Dmaven.test.skip=true`
+* Run `script/run.sh`
+
+
 Output data
 -----------
 
