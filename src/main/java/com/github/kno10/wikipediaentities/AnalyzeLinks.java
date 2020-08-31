@@ -135,7 +135,7 @@ public class AnalyzeLinks {
                     }
                     if(nam == null) {
                         buf.setLength(0);
-                        nam = unique.addOrGet(buf.append(cols[0]).append(':').append(cols[i].replace(':', ' ')).toString());
+                        nam = unique.addOrGet(buf.append(cols[0]).append('|').append(cols[i]).toString());
                     }
                     buf.setLength(0);
                     buf.append(header[i]).append(':').append(cols[i]);
@@ -363,9 +363,9 @@ public class AnalyzeLinks {
                         continue; // Was not a candidate.
                     int conf = (int) Math.round(Math.log1p(.1 * score) / norm * 100.);
                     buf.append('\t').append(targ);
-                    buf.append(':').append(c.getSearchCount());
-                    buf.append(':').append(c.getExactCount());
-                    buf.append(':').append(conf).append('%');
+                    buf.append('|').append(c.getSearchCount());
+                    buf.append('|').append(c.getExactCount());
+                    buf.append('|').append(conf).append('%');
                     output = true;
                 }
             }
