@@ -138,6 +138,9 @@ public class LuceneWikipediaIndexer {
             pos = linkMatcher.end();
             continue; // Internal link.
           }
+          String labl = linkMatcher.group(2);
+          if(labl == null)
+            labl = targ;
           targ = Util.normalizeLink(targ);
           if(targ == null || targ.length() == 0) {
             System.err.println(linkMatcher.group(0));
@@ -152,9 +155,6 @@ public class LuceneWikipediaIndexer {
           || "fichier".equalsIgnoreCase(targl) || "datei".equalsIgnoreCase(targl) || "bild".equalsIgnoreCase(targl) //
           || "archivo".equalsIgnoreCase(targl) || "imagen".equalsIgnoreCase(targl))
             continue;
-          String labl = linkMatcher.group(2);
-          if(labl == null)
-            labl = targ;
           labl = labl.replace('\n', ' ').trim();
           targ = prefix + targ;
           if(addLink(targ, labl))
